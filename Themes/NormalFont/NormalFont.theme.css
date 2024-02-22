@@ -1,0 +1,44 @@
+/**
+ * @name Normal Font
+ * @author @miniontoby
+ * @authorId 849180136828960799
+ * @version 1.0
+ * @description A simple discord theme which returns the normal font
+ *
+ * @updateUrl https://raw.githubusercontent.com/Miniontoby/MinionBDStuff/main/Themes/NormalFont.theme.css
+ * @source https://raw.githubusercontent.com/Miniontoby/MinionBDStuff/main/Themes/NormalFont.theme.css
+ * @website https://raw.githubusercontent.com/Miniontoby/MinionBDStuff/main/Themes/
+ */
+
+/* ----------------------------------------------------------------------- */
+
+/* Backwards Compatibility */
+
+:root {
+    --line-spacing: var(--message-line-spacing);
+    --font-primary: "Whitney","Helvetica Neue",Helvetica,Arial,sans-serif !important;
+    --font-display: "Noto Sans",var(--font-primary) !important;
+}
+
+/* Apply styles */
+
+::-webkit-input-placeholder, body, button, input, select, textarea {
+    font-family: var(--font-primary);
+    word-spacing: var(--word-spacing, initial);
+    letter-spacing: var(--letter-spacing, initial);
+}
+
+/* Adjust formatted text line-height */
+
+[class*="messageContent_" i] {
+    line-height: var(--message-line-spacing, initial) !important;
+}
+
+/* Scale up timestamps & "Edited" text */
+
+[class*="group-spacing" i] [class*="timestamp"],
+[class*="messageContent_" i] time {
+    font-size: .9rem;
+}
+
+/* ----------------------------------------------------------------------- */
