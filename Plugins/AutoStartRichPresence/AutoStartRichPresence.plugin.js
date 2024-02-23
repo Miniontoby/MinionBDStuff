@@ -1,6 +1,6 @@
 /**
  * @name AutoStartRichPresence
- * @version 2.0.10
+ * @version 2.0.11
  *
  * @author Miniontoby
  * @authorId 849180136828960799
@@ -11,7 +11,7 @@
  * @website https://raw.githubusercontent.com/Miniontoby/MinionBDStuff/main/Plugins/AutoStartRichPresence/
  */
 
-// Updated October 26th, 2023
+// Updated February 23th, 2024
 
 /*@cc_on
 @if (@_jscript)
@@ -118,7 +118,7 @@ class AutoStartRichPresence {
         const panel = document.createElement("form");
         panel.classList.add("form");
         panel.style.setProperty("width", "100%");
-        this.generateSettings(panel);
+        panel.appendChild(this.generateSettings());
         return panel;
     }
     async updateData() {
@@ -134,59 +134,46 @@ class AutoStartRichPresence {
         setTimeout(() => this.updateRichPresence(), 50);
     }
     createInput(label, description, type, classname, extrat='text') {
-        let out = `<b>${label}</b><br><span>${description}</span><br><br>`
-        if (type == 'onoff') out += `<select class="${classname} inputDefault-Ciwd-S input-3O04eu" style="width:80%"><option value="false">OFF</option><option value="true">ON</option></select>`
-        if (type == 'input') out += `<input class="${classname} inputDefault-Ciwd-S input-3O04eu" placeholder="${label}" style="width:80%" type="${extrat}">`;
+        let out = `<b>${label}</b><br><span>${description}</span><br><br>`;
+        if (type == 'onoff') out += `<select class="${classname} inputDefault-Ciwd-S input-3O04eu" style="width:80%;color:inherit"><option value="false">OFF</option><option value="true">ON</option></select>`;
+        if (type == 'input') out += `<input class="${classname} inputDefault-Ciwd-S input-3O04eu" placeholder="${label}" style="width:80%;color:inherit" type="${extrat}">`;
         return out + '<br><br>';
     }
-    getSettingsPanel() {
+    generateSettings() {
         this.settings = BdApi.loadData("AutoStartRichPresence", "settings") || {};
         let template = document.createElement("template");
-        template.innerHTML = `<div style="color: var(--header-primary);font-size: 16px;font-weight: 300;line-height: 22px;max-width: 550px;margin-top: 17px;">
-${this.createInput('Client ID', 'Enter your Client ID (get from developers page) [needed for image keys]', 'input', 'clientid', 'number')}
-${this.createInput('Activity Name', 'Enter a name for the activity', 'input', 'activityname')}
-${this.createInput('Activity Details', 'Enter a description for the activity', 'input', 'activitydetails')}
-${this.createInput('Activity State', 'Enter a second description for the activity', 'input', 'activitystate')}
-${this.createInput('Activity Button 1 Text', 'Enter Text for button 1', 'input', 'activitybutton1text')}
-${this.createInput('Activity Button 1 URL', 'Enter URL for button 1', 'input', 'activitybutton1url')}
-${this.createInput('Activity Button 2 Text', 'Enter Text for button 2', 'input', 'activitybutton2text')}
-${this.createInput('Activity Button 2 URL', 'Enter URL for button 2', 'input', 'activitybutton2url')}
-${this.createInput('Activity Small Image Key', 'Enter Image Key for Small Icon', 'input', 'activityiconsmallimage')}
-${this.createInput('Activity Small Image Text', 'Enter Label for Small Icon', 'input', 'activityiconsmalltext')}
-${this.createInput('Activity Large Image Key', 'Enter Image Key for Large Icon', 'input', 'activityiconlargeimage')}
-${this.createInput('Activity Large Image Text', 'Enter Label for Large Icon', 'input', 'activityiconlargetext')}
-${this.createInput('Enable Start Time', 'Enable timestamp which shows the time when started', 'onoff', 'enablestarttime')}
-${this.createInput('Listening Status', 'Enable listening status', 'onoff', 'listening')}
-${this.createInput('Disable When Activity', 'Disables when there is another activity', 'onoff', 'disableactivity')}
+        template.innerHTML = `<div style="color:var(--header-primary);font-size:16px;font-weight:300;line-height:22px;max-width:550px;margin-top:17px;">
+${this.createInput('Client ID', 'Enter your Client ID (get from developers page) [needed for image keys]', 'input', 'clientID', 'text')}
+${this.createInput('Activity Name', 'Enter a name for the activity', 'input', 'name')}
+${this.createInput('Activity Details', 'Enter a description for the activity', 'input', 'details')}
+${this.createInput('Activity State', 'Enter a second description for the activity', 'input', 'state')}
+${this.createInput('Activity Button 1 Text', 'Enter Text for button 1', 'input', 'button1Label')}
+${this.createInput('Activity Button 1 URL', 'Enter URL for button 1', 'input', 'button1URL')}
+${this.createInput('Activity Button 2 Text', 'Enter Text for button 2', 'input', 'button2Label')}
+${this.createInput('Activity Button 2 URL', 'Enter URL for button 2', 'input', 'button2URL')}
+${this.createInput('Activity Small Image Key', 'Enter Image Key for Small Icon', 'input', 'smallImageKey')}
+${this.createInput('Activity Small Image Text', 'Enter Label for Small Icon', 'input', 'smallImageText')}
+${this.createInput('Activity Large Image Key', 'Enter Image Key for Large Icon', 'input', 'largeImageKey')}
+${this.createInput('Activity Large Image Text', 'Enter Label for Large Icon', 'input', 'largeImageText')}
+${this.createInput('Enable Start Time', 'Enable timestamp which shows the time when started', 'onoff', 'enableStartTime')}
+${this.createInput('Listening Status', 'Enable listening status', 'onoff', 'listeningTo')}
+${this.createInput('Disable When Activity', 'Disables when there is another activity', 'onoff', 'disableWhenActivity')}
 </div>`;
-        let clientidEl = template.content.firstElementChild.getElementsByClassName('clientid')[0];
-        let nameEl = template.content.firstElementChild.getElementsByClassName('activityname')[0];
-        let detailsEl = template.content.firstElementChild.getElementsByClassName('activitydetails')[0];
-        let stateEl = template.content.firstElementChild.getElementsByClassName('activitystate')[0];
-        let button1textEl = template.content.firstElementChild.getElementsByClassName('activitybutton1text')[0];
-        let button1urlEl = template.content.firstElementChild.getElementsByClassName('activitybutton1url')[0];
-        let button2textEl = template.content.firstElementChild.getElementsByClassName('activitybutton2text')[0];
-        let button2urlEl = template.content.firstElementChild.getElementsByClassName('activitybutton2url')[0];
-        let iconsmallkeyEl = template.content.firstElementChild.getElementsByClassName('activityiconsmallimage')[0];
-        let iconsmalltextEl = template.content.firstElementChild.getElementsByClassName('activityiconsmalltext')[0];
-        let iconlargekeyEl = template.content.firstElementChild.getElementsByClassName('activityiconlargeimage')[0];
-        let iconlargetextEl = template.content.firstElementChild.getElementsByClassName('activityiconlargetext')[0];
-        let enablestarttimeEl = template.content.firstElementChild.getElementsByClassName('enablestarttime')[0];
-        let listeningEl = template.content.firstElementChild.getElementsByClassName('listening')[0];
-        let disableEl = template.content.firstElementChild.getElementsByClassName('disableactivity')[0];
         let updateSetting = (e, setting) => {
             this.settings[setting] = e.target.value;
             this.updateSettings();
         }
-        const TextInputs = [["clientID", clientidEl], ["name", nameEl], ["details", detailsEl], ["state", stateEl], ["button1Label", button1textEl], ["button1URL", button1urlEl], ["button2Label", button2textEl], ["button2URL", button2urlEl], ["smallImageKey", iconsmallkeyEl], ["smallImageText", iconsmalltextEl], ["largeImageKey", iconlargekeyEl], ["largeImageText", iconlargetextEl]];
-        for (const [setting, el] of TextInputs) {
+        const TextInputs = ["clientID", "name", "details", "state", "button1Label", "button1URL", "button2Label", "button2URL", "smallImageKey", "smallImageText", "largeImageKey", "largeImageText"];
+        for (const setting of TextInputs) {
+            const el = template.content.firstElementChild.getElementsByClassName(setting)[0];
             el.value = this.settings[setting] ?? "";
             el.onchange = (e) => updateSetting(e, setting);
             el.onpaste = (e) => updateSetting(e, setting);
             el.onkeydown = (e) => updateSetting(e, setting);
         }
-        const OnOffInputs = [["enableStartTime", enablestarttimeEl], ["listeningTo", listeningEl],["disableWhenActivity", disableEl]];
-        for (const [setting, el] of OnOffInputs) {
+        const OnOffInputs = ["enableStartTime", "listeningTo", "disableWhenActivity"];
+        for (const setting of OnOffInputs) {
+            const el = template.content.firstElementChild.getElementsByClassName(setting)[0];
             el.value = this.settings[setting] ? "true" : "false";
             el.onchange = () => {
                 this.settings[setting] = el.value === "true";
