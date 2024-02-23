@@ -1,6 +1,6 @@
 # AutoStartRichPresence - [Download](https://betterdiscord.app/Download?id=)
 
-Automatically starts a custom Rich Presence application when you start Discord.
+Automatically starts a custom Rich Presence application when you start Discord. Now with support for multiple rich presence profiles!
 
 Original idea by Lucario. Lucario's original plugin to do this is broken, so I wrote my own.
 This is not Lucario's original code, but I did try to keep the names of the settings the same.
