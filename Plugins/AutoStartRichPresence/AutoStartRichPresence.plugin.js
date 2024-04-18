@@ -1,6 +1,6 @@
 /**
  * @name AutoStartRichPresence
- * @version 2.0.11
+ * @version 2.0.12
  *
  * @author Miniontoby
  * @authorId 849180136828960799
@@ -8,10 +8,10 @@
  *
  * @updateUrl https://raw.githubusercontent.com/Miniontoby/MinionBDStuff/main/Plugins/AutoStartRichPresence/AutoStartRichPresence.plugin.js
  * @source https://raw.githubusercontent.com/Miniontoby/MinionBDStuff/main/Plugins/AutoStartRichPresence/AutoStartRichPresence.plugin.js
- * @website https://raw.githubusercontent.com/Miniontoby/MinionBDStuff/main/Plugins/AutoStartRichPresence/
+ * @website https://github.com/Miniontoby/MinionBDStuff/tree/main/Plugins/AutoStartRichPresence/
  */
 
-// Updated February 23th, 2024
+// Updated April 18th, 2024
 
 /*@cc_on
 @if (@_jscript)
@@ -126,6 +126,22 @@ class AutoStartRichPresence {
         }
         setTimeout(() => this.updateRichPresence(), 50);
     }
+    findClassName(prefix) {
+        for (let stylesheet of document.styleSheets) {
+            try {
+                if (stylesheet.cssRules) {
+                    const rules = [...stylesheet.cssRules].filter(r => r?.selectorText && r.selectorText.lastIndexOf('.') == 0);
+                    for (let rule of rules) {
+                        if (rule.selectorText.startsWith(prefix) && !rule.selectorText.includes(' ') && !rule.selectorText.startsWith(`${prefix}_`)) {
+                            return rule.selectorText;
+                        }
+                    };
+                }
+            } catch (e) {
+                console.warn("Warning:", e.message, ". Try set crossorigin='anonymous' on element", stylesheet)
+            }
+        }
+    }
     createElement = tag => properties => Object.assign(document.createElement(tag), properties)
     createBr = this.createElement('br')
     createMyInput(label, description, type, id, options = undefined) {
@@ -139,7 +155,10 @@ class AutoStartRichPresence {
             }
         }
         wrap.appendChild(this.createBr());
-        const thisinput = this.createElement(type == 'onoff' ? 'select' : type)({ id, className: 'inputDefault-Ciwd-S input-3O04eu width100__1676d', style: 'color:inherit' });
+        const inputDefaultClass = this.findClassName('.inputDefault__')?.replace('.', '') ?? 'inputDefault__22335';
+        const inputClass = this.findClassName('.input_')?.replace('.', '') ?? 'input_f27786';
+        const widthClass = this.findClassName('.width100__')?.replace('.', '') ?? 'width100__1676d';
+        const thisinput = this.createElement(type == 'onoff' ? 'select' : type)({ id, className: `${inputDefaultClass} ${inputClass} ${widthClass}`, }) //style: 'color:inherit;background-color:inherit;border-color:inherit' });
         if (type == 'input') thisinput.setAttribute('type', 'text');
         else if (type == 'onoff') {
             thisinput.appendChild(this.createElement('option')({ value: 'false', textContent: 'OFF' }));
@@ -152,24 +171,33 @@ class AutoStartRichPresence {
         wrap.appendChild(this.createBr());wrap.appendChild(this.createBr());
         return wrap;
     }
+    createMyButton(id, textContent, colorClassName) {
+        const buttonClass = this.findClassName('.button_')?.replace('.', '') ?? 'button_afdfd9';
+        const lookFilledClass = this.findClassName('.lookFilled__')?.replace('.', '') ?? 'lookFilled__19298';
+        const colorClass = this.findClassName(`.${colorClassName}__`)?.replace('.', '') ?? colorClassName + '_b2253e';
+        const sizeMediumClass = this.findClassName('.sizeMedium__')?.replace('.', '') ?? 'sizeMedium__60c12';
+        const growClass = this.findClassName('.grow__')?.replace('.', '') ?? 'grow__4c8a4';
+        const backgroundContainerClass = this.findClassName('.backgroundContainer__')?.replace('.', '') ?? 'backgroundContainer__8f24a';
+        return this.createElement('button')({ id, textContent, className: `${buttonClass} ${lookFilledClass} ${colorClass} ${sizeMediumClass} ${growClass} ${backgroundContainerClass}` });
+    }
     generateSettings() {
         const element = this.createElement("div")({ style: 'color:var(--header-primary);font-size:16px;font-weight:300;line-height:22px;max-width:550px;margin-top:17px' });
         element.appendChild(this.createMyInput('Select Active Profile', 'With this plugin you can have multiple presets.', 'select', 'ASRPActiveProfileSelector', this.profiles.map((prof, i) => { return { value: String(i), label: prof.pname, selected: i == this.settings.activeProfileID }; })));
         element.appendChild(this.createMyInput('Disable When Activity', 'Disables when there is another activity', 'onoff', 'disableWhenActivity'));
-	element.appendChild(this.createBr());
-	element.appendChild(this.createElement('hr')());
-	element.appendChild(this.createMyInput('Select Editing Profile', 'In order to change the name of the profile, edit profiles -> pname of AutoStartRichPresence.config.json.', 'select', 'ASRPProfileSelector', this.profiles.map((prof, i) => { return { value: String(i), label: prof.pname }; })));
-        element.appendChild(this.createElement('button')({ id: 'createProfile', textContent: 'Create New Profile', className: 'bd-button button_afdfd9 lookFilled__19298 colorBrand_b2253e sizeMedium_c6fa98 grow__4c8a4' }))
-	element.appendChild(this.createBr());
-	element.appendChild(this.createBr());
-	element.appendChild(this.createElement('hr')());
+        element.appendChild(this.createBr());
+        element.appendChild(this.createElement('hr')());
+        element.appendChild(this.createMyInput('Select Editing Profile', 'In order to change the name of the profile, edit profiles -> pname of AutoStartRichPresence.config.json.', 'select', 'ASRPProfileSelector', this.profiles.map((prof, i) => { return { value: String(i), label: prof.pname }; })));
+        element.appendChild(this.createMyButton('createProfile', 'Create New Profile', 'colorBrand'));
+        element.appendChild(this.createBr());
+        element.appendChild(this.createBr());
+        element.appendChild(this.createElement('hr')());
 
         const editContainer = this.getSettingsFields();
         element.appendChild(editContainer);
         if (this.profiles?.length && this.profiles?.length > 0 && this.session.editingProfile <= this.profiles.length)
             this.reloadEditProfileInputFields(editContainer, this.session.editingProfile);
 
-        element.appendChild(this.createElement('button')({ id: 'deleteProfile', textContent: 'Delete Profile', className: 'bd-button button_afdfd9 lookFilled__19298 colorRed_d6b062 sizeMedium_c6fa98 grow__4c8a4' }))
+        element.appendChild(this.createMyButton('deleteProfile', 'Delete Profile', 'colorError'));
 
         element.querySelector('select#ASRPActiveProfileSelector').onchange = function(e) {
             const id = e.target.value && Number(e.target.value);
