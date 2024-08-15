@@ -1,6 +1,6 @@
 /**
  * @name AutoStartRichPresence
- * @version 2.0.12
+ * @version 2.0.13
  *
  * @author Miniontoby
  * @authorId 849180136828960799
@@ -11,7 +11,7 @@
  * @website https://github.com/Miniontoby/MinionBDStuff/tree/main/Plugins/AutoStartRichPresence/
  */
 
-// Updated April 18th, 2024
+// Updated August 15th, 2024
 
 /*@cc_on
 @if (@_jscript)
@@ -155,8 +155,8 @@ class AutoStartRichPresence {
             }
         }
         wrap.appendChild(this.createBr());
-        const inputDefaultClass = this.findClassName('.inputDefault__')?.replace('.', '') ?? 'inputDefault__22335';
-        const inputClass = this.findClassName('.input_')?.replace('.', '') ?? 'input_f27786';
+        const inputDefaultClass = this.findClassName('.inputDefault_f8')?.replace('.', '') ?? 'inputDefault_f8bc55';
+        const inputClass = this.findClassName('.input_f8')?.replace('.', '') ?? 'input_f8bc55';
         const widthClass = this.findClassName('.width100__')?.replace('.', '') ?? 'width100__1676d';
         const thisinput = this.createElement(type == 'onoff' ? 'select' : type)({ id, className: `${inputDefaultClass} ${inputClass} ${widthClass}`, }) //style: 'color:inherit;background-color:inherit;border-color:inherit' });
         if (type == 'input') thisinput.setAttribute('type', 'text');
@@ -172,13 +172,18 @@ class AutoStartRichPresence {
         return wrap;
     }
     createMyButton(id, textContent, colorClassName) {
-        const buttonClass = this.findClassName('.button_')?.replace('.', '') ?? 'button_afdfd9';
-        const lookFilledClass = this.findClassName('.lookFilled__')?.replace('.', '') ?? 'lookFilled__19298';
-        const colorClass = this.findClassName(`.${colorClassName}__`)?.replace('.', '') ?? colorClassName + '_b2253e';
-        const sizeMediumClass = this.findClassName('.sizeMedium__')?.replace('.', '') ?? 'sizeMedium__60c12';
-        const growClass = this.findClassName('.grow__')?.replace('.', '') ?? 'grow__4c8a4';
-        const backgroundContainerClass = this.findClassName('.backgroundContainer__')?.replace('.', '') ?? 'backgroundContainer__8f24a';
+        /*
+        const colorClassClasss = `color${colorClassName[0].toUpperCase()+colorClassName.slice(1)}`;
+        const buttonClasses = BdApi.findModuleByProps('button', 'lookFilled', 'colorBrand', 'sizeMedium', 'grow');
+        const buttonClass = buttonClasses?.button ?? this.findClassName('.button_')?.replace('.', '') ?? 'button_afdfd9';
+        const lookFilledClass = buttonClasses?.lookFilled ?? this.findClassName('.lookFilled__')?.replace('.', '') ?? 'lookFilled__19298';
+        const colorClass = buttonClasses?.[colorClassClasss] ?? this.findClassName(`.${colorClassClasss}__`)?.replace('.', '') ?? `${colorClassClasss}_b2253e`;
+        const sizeMediumClass = buttonClasses?.sizeMedium ?? this.findClassName('.sizeMedium__')?.replace('.', '') ?? 'sizeMedium__60c12';
+        const growClass = buttonClasses?.grow ?? this.findClassName('.grow__')?.replace('.', '') ?? 'grow__4c8a4';
+        const backgroundContainerClass = BdApi.findModuleByProps('button', 'backgroundContainer')?.backgroundContainer ?? this.findClassName('.backgroundContainer__')?.replace('.', '') ?? 'backgroundContainer__8f24a';
         return this.createElement('button')({ id, textContent, className: `${buttonClass} ${lookFilledClass} ${colorClass} ${sizeMediumClass} ${growClass} ${backgroundContainerClass}` });
+        */
+        return this.createElement('button')({ id, textContent, className: `bd-button bd-button-filled bd-button-color-${colorClassName} bd-button-medium bd-button-grow` });
     }
     generateSettings() {
         const element = this.createElement("div")({ style: 'color:var(--header-primary);font-size:16px;font-weight:300;line-height:22px;max-width:550px;margin-top:17px' });
@@ -187,7 +192,7 @@ class AutoStartRichPresence {
         element.appendChild(this.createBr());
         element.appendChild(this.createElement('hr')());
         element.appendChild(this.createMyInput('Select Editing Profile', 'In order to change the name of the profile, edit profiles -> pname of AutoStartRichPresence.config.json.', 'select', 'ASRPProfileSelector', this.profiles.map((prof, i) => { return { value: String(i), label: prof.pname }; })));
-        element.appendChild(this.createMyButton('createProfile', 'Create New Profile', 'colorBrand'));
+        element.appendChild(this.createMyButton('createProfile', 'Create New Profile', 'brand'));
         element.appendChild(this.createBr());
         element.appendChild(this.createBr());
         element.appendChild(this.createElement('hr')());
@@ -197,7 +202,7 @@ class AutoStartRichPresence {
         if (this.profiles?.length && this.profiles?.length > 0 && this.session.editingProfile <= this.profiles.length)
             this.reloadEditProfileInputFields(editContainer, this.session.editingProfile);
 
-        element.appendChild(this.createMyButton('deleteProfile', 'Delete Profile', 'colorError'));
+        element.appendChild(this.createMyButton('deleteProfile', 'Delete Profile', 'red'));
 
         element.querySelector('select#ASRPActiveProfileSelector').onchange = function(e) {
             const id = e.target.value && Number(e.target.value);
