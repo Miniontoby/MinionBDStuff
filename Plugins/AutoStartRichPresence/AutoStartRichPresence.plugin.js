@@ -1,6 +1,6 @@
 /**
  * @name AutoStartRichPresence
- * @version 2.0.13
+ * @version 2.0.14
  *
  * @author Miniontoby
  * @authorId 849180136828960799
@@ -11,7 +11,7 @@
  * @website https://github.com/Miniontoby/MinionBDStuff/tree/main/Plugins/AutoStartRichPresence/
  */
 
-// Updated August 15th, 2024
+// Updated November 30th, 2024
 
 /*@cc_on
 @if (@_jscript)
@@ -119,8 +119,8 @@ class AutoStartRichPresence {
 
         if (this.settings.disableWhenActivity) {
             const activities = this.getLocalPresence().activities;
-            if (activities.filter(a => a.application_id !== this.settings.ClientID).length) {
-                if (activities.find(a => a.application_id === this.settings.ClientID)) this.setActivity({});
+            if (activities.filter(a => a?.application_id && a.application_id !== this.activeProfile.clientID).length) {
+                if (activities.find(a => a?.application_id && a.application_id === this.activeProfile.clientID)) this.setActivity({});
                 return;
             }
         }
