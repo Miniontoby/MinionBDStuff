@@ -1,6 +1,6 @@
 /**
  * @name AutoStartRichPresence
- * @version 2.0.13
+ * @version 2.0.15
  *
  * @author Miniontoby
  * @authorId 849180136828960799
@@ -39,7 +39,7 @@
 const config = {
     changelog: [
         {
-            title: "Update 2.0.13 - March 29th, 2025",
+            title: "Update 2.0.15 - March 29th, 2025",
             type: "updated",
             items: [
                 "Upgraded to newer BD 1.11.0 version",
