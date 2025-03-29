@@ -1,6 +1,6 @@
 /**
  * @name AutoStartRichPresence
- * @version 2.0.12
+ * @version 2.0.13
  *
  * @author Miniontoby
  * @authorId 849180136828960799
@@ -11,7 +11,7 @@
  * @website https://github.com/Miniontoby/MinionBDStuff/tree/main/Plugins/AutoStartRichPresence/
  */
 
-// Updated April 18th, 2024
+// Updated March 29th, 2025
 
 /*@cc_on
 @if (@_jscript)
@@ -35,6 +35,22 @@
     WScript.Quit();
 @else @*/
 
+
+const config = {
+    changelog: [
+        {
+            title: "Update 2.0.13 - March 29th, 2025",
+            type: "updated",
+            items: [
+                "Upgraded to newer BD 1.11.0 version",
+                "Added changelog"
+            ]
+        },
+    ],
+    // config is not static, but dynamic. Not specified here.
+};
+
+
 function isURL(url) {
     try {
         const newUrl = new URL(url);
@@ -45,7 +61,10 @@ function isURL(url) {
 }
 
 class AutoStartRichPresence {
-    constructor() {
+    constructor(meta) {
+        this.meta = meta;
+        this.api = new BdApi(this.meta.name);
+
         this.initialized = false;
         this.settings = {};
         this.startPlaying = Date.now();
@@ -69,21 +88,28 @@ class AutoStartRichPresence {
     }
     async start() {
         this.initialize();
+
+        const savedVersion = this.api.Data.load("version");
+        if (savedVersion !== this.meta.version) {
+            this.api.UI.showChangelogModal({
+                title: this.meta.name,
+                subtitle: this.meta.version,
+                blurb: "Automatic customizable rich presence status plugin",
+                changes: config.changelog
+            });
+            this.api.Data.save("version", this.meta.version);
+        }
     }
     initialize() {
         console.log("Starting AutoStartRichPresence");
         BdApi.showToast("AutoStartRichPresence has started!");
         this.updateDataInterval = setInterval(() => this.updateData(), 60*1000); // every 60 seconds
 
-        this.settings = BdApi.loadData("AutoStartRichPresence", "settings") || {};
+        this.settings = this.api.Data.load("settings") || {};
         if (this.settings.clientID || this.settings.details || this.settings.state) this.migrateData();
 
-        this.profiles = BdApi.loadData("AutoStartRichPresence", "profiles") || [];
+        this.profiles = this.api.Data.load("profiles") || [];
         if (!this.settings.activeProfileID && this.profiles.length) this.settings.activeProfileID = 0;
-
-        this.session = {
-            editingProfile: this.settings.activeProfileID || 0,
-        };
 
         this.getLocalPresence = BdApi.findModuleByProps("getLocalPresence").getLocalPresence;
         this.rpc = BdApi.findModuleByProps("dispatch", "_subscriptions");
@@ -105,13 +131,108 @@ class AutoStartRichPresence {
     }
     getSettingsPanel() {
         if (!this.initialized) return;
-        this.settings = BdApi.loadData("AutoStartRichPresence", "settings") || {};
-        this.profiles = BdApi.loadData("AutoStartRichPresence", "profiles") || [];
-        const panel = document.createElement("form");
-        panel.classList.add("form");
-        panel.style.setProperty("width", "100%");
-        panel.appendChild(this.generateSettings());
-        return panel;
+        this.settings = this.api.Data.load("settings") || {};
+        this.profiles = this.api.Data.load("profiles") || [];
+
+        const settings = [
+            {
+                type: "dropdown",
+                id: "ASRPActiveProfileSelector",
+                name: "Select Active Profile",
+                note: "With this plugin you can have multiple presets.",
+                value: this.settings.activeProfileID,
+                options: this.profiles.map((prof, i) => { return { value: i, label: prof.pname }; }),
+            },
+            { type: "switch", id: "disableWhenActivity", name: "Disable When Activity", note: "Disables when there is another activity", value: this.settings.disableWhenActivity },
+            {
+                type: "button",
+                id: "createProfile",
+                children: "Create New Profile",
+                note: "Close and reopen the settings window afterwards!",
+                inline: false,
+                onClick: () => {
+                    this.profiles.push({ pname: "New Profile" });
+                    if (this.profiles.length === 1) this.settings.activeProfileID = 0;
+                    this.updateProfiles();
+                    BdApi.showToast("[AutoStartRichPresence] Created a new profile", { type: "success" });
+                },
+            },
+        ];
+        for (const i in this.profiles) {
+            const profile = this.profiles[i];
+            settings.push({
+                type: "category",
+                id: "profile_" + i,
+                name: "Edit Profile - " + profile.pname,
+                collapsible: true,
+                shown: false,
+                settings: [
+                    { type: "text", id: "pname", name: "Profile Name", note: "Enter a profile name (this doesn't show up on discord!) [Close and reopen the settings menu afterwards!]", value: profile.pname },
+                    { type: "text", id: "clientID", name: "Client ID", note: "Enter your Client ID (get from developers page) [needed for image keys]", value: profile.clientID },
+                    { type: "text", id: "name", name: "Activity Name", note: "Enter a name for the activity", value: profile.name },
+                    { type: "text", id: "details", name: "Activity Details", note: "Enter a description for the activity", value: profile.details },
+                    { type: "text", id: "state", name: "Activity State", note: "Enter a second description for the activity", value: profile.state },
+                    { type: "text", id: "button1Label", name: "Activity Button 1 Text", note: "Enter Text for button 1", value: profile.button1Label },
+                    { type: "text", id: "button1URL", name: "Activity Button 1 URL", note: "Enter URL for button 1", value: profile.button1URL },
+                    { type: "text", id: "button2Label", name: "Activity Button 2 Text", note: "Enter Text for button 2", value: profile.button2Label },
+                    { type: "text", id: "button2URL", name: "Activity Button 2 URL", note: "Enter URL for button 2", value: profile.button2URL },
+                    { type: "text", id: "smallImageKey", name: "Activity Small Image Key", note: "Enter Image Key for Small Icon", value: profile.smallImageKey },
+                    { type: "text", id: "smallImageText", name: "Activity Small Image Text", note: "Enter Label for Small Icon", value: profile.smallImageText },
+                    { type: "text", id: "largeImageKey", name: "Activity Large Image Key", note: "Enter Image Key for Large Icon", value: profile.largeImageKey },
+                    { type: "text", id: "largeImageText", name: "Activity Large Image Text", note: "Enter Label for Large Icon", value: profile.largeImageText },
+                    { type: "switch", id: "enableStartTime", name: "Enable Start Time", note: "Enable timestamp which shows the time when started", value: profile.enableStartTime },
+                    { type: "switch", id: "listeningTo", name: "Listening Status", note: "Enable listening status", value: profile.listeningTo },
+                    {
+                        type: "button",
+                        id: "deleteProfile",
+                        children: "Delete Profile",
+                        note: "Close and reopen the settings window after!",
+                        inline: false,
+                        onClick: () => {
+                            const profileID = i;
+                            if (profileID >= this.profiles.length) return console.log("profileSettings too high ID", profileID, id, value);
+                            BdApi.showConfirmationModal("Delete Rich Presence Profile", `Are you sure you want to delete ${this.profiles[profileID]?.pname || "this profile"}? (This will not delete any Discord Developer Applications.)`, {
+                                danger: true,
+                                confirmText: "Delete",
+                                onConfirm: () => {
+                                    this.deleteProfile(profileID);
+                                    this.updateProfiles();
+                                    BdApi.showToast("[AutoStartRichPresence] Deleted profile", { type: "success" });
+                                }
+                            });
+                        },
+                        color: BdApi.Components.Button.Colors.RED,
+                    },
+                ],
+            });
+        }
+
+        return BdApi.UI.buildSettingsPanel({
+            settings: settings,
+            onChange: (category, id, value) => {
+                if (category === null) {
+                    if (id === "ASRPActiveProfileSelector") {
+                        if (isNaN(value)) return;
+                        this.settings.activeProfileID = value;
+                        this.updateSettings();
+                    } else if (id === "disableWhenActivity") {
+                        if (value !== true && value !== false) return;
+                        this.settings.disableWhenActivity = value;
+                        this.updateSettings();
+                    } else {
+                        console.log("globalSettings UNKNOWN ID", id, value);
+                    }
+                } else if (category.startsWith("profile_")) {
+                    const profileID = Number(category.replace("profile_", ""));
+                    if (isNaN(profileID)) return console.log("profileSettings NOT A NUMBER", category, profileID, id, value);
+                    if (profileID >= this.profiles.length) return console.log("profileSettings too high ID", profileID, id, value);
+                    //if (!(id in this.profiles[profileID])) return console.log("profileSettings", profileID, "UNKNOWN ID", id, value);
+                    this.profiles[profileID][id] = value;
+                } else {
+                    console.log("UNKNOWN CATEGORY", category, id, value);
+                }
+            }
+        });
     }
     async updateData() {
         if (!this.initialized) return;
@@ -119,218 +240,12 @@ class AutoStartRichPresence {
 
         if (this.settings.disableWhenActivity) {
             const activities = this.getLocalPresence().activities;
-            if (activities.filter(a => a.application_id !== this.settings.ClientID).length) {
-                if (activities.find(a => a.application_id === this.settings.ClientID)) this.setActivity({});
+            if (activities.filter(a => a?.application_id && a.application_id !== this.activeProfile.clientID).length) {
+                if (activities.find(a => a?.application_id && a.application_id === this.activeProfile.clientID)) this.setActivity({});
                 return;
             }
         }
         setTimeout(() => this.updateRichPresence(), 50);
-    }
-    findClassName(prefix) {
-        for (let stylesheet of document.styleSheets) {
-            try {
-                if (stylesheet.cssRules) {
-                    const rules = [...stylesheet.cssRules].filter(r => r?.selectorText && r.selectorText.lastIndexOf('.') == 0);
-                    for (let rule of rules) {
-                        if (rule.selectorText.startsWith(prefix) && !rule.selectorText.includes(' ') && !rule.selectorText.startsWith(`${prefix}_`)) {
-                            return rule.selectorText;
-                        }
-                    };
-                }
-            } catch (e) {
-                console.warn("Warning:", e.message, ". Try set crossorigin='anonymous' on element", stylesheet)
-            }
-        }
-    }
-    createElement = tag => properties => Object.assign(document.createElement(tag), properties)
-    createBr = this.createElement('br')
-    createMyInput(label, description, type, id, options = undefined) {
-        const wrap = this.createElement('div')();
-        if (label !== '') {
-            wrap.appendChild(this.createElement('b')({ textContent: label }));
-            wrap.appendChild(this.createBr());
-            if (description !== '') {
-                wrap.appendChild(this.createElement('span')({ textContent: description }));
-                wrap.appendChild(this.createBr());
-            }
-        }
-        wrap.appendChild(this.createBr());
-        const inputDefaultClass = this.findClassName('.inputDefault__')?.replace('.', '') ?? 'inputDefault__22335';
-        const inputClass = this.findClassName('.input_')?.replace('.', '') ?? 'input_f27786';
-        const widthClass = this.findClassName('.width100__')?.replace('.', '') ?? 'width100__1676d';
-        const thisinput = this.createElement(type == 'onoff' ? 'select' : type)({ id, className: `${inputDefaultClass} ${inputClass} ${widthClass}`, }) //style: 'color:inherit;background-color:inherit;border-color:inherit' });
-        if (type == 'input') thisinput.setAttribute('type', 'text');
-        else if (type == 'onoff') {
-            thisinput.appendChild(this.createElement('option')({ value: 'false', textContent: 'OFF' }));
-            thisinput.appendChild(this.createElement('option')({ value: 'true', textContent: 'ON' }));
-        }
-        else if (type == 'select' && options) {
-            for (const opt of options) thisinput.appendChild(this.createElement('option')({ value: opt.value, textContent: opt.label, selected: opt?.selected }));
-        }
-        wrap.appendChild(thisinput);
-        wrap.appendChild(this.createBr());wrap.appendChild(this.createBr());
-        return wrap;
-    }
-    createMyButton(id, textContent, colorClassName) {
-        const buttonClass = this.findClassName('.button_')?.replace('.', '') ?? 'button_afdfd9';
-        const lookFilledClass = this.findClassName('.lookFilled__')?.replace('.', '') ?? 'lookFilled__19298';
-        const colorClass = this.findClassName(`.${colorClassName}__`)?.replace('.', '') ?? colorClassName + '_b2253e';
-        const sizeMediumClass = this.findClassName('.sizeMedium__')?.replace('.', '') ?? 'sizeMedium__60c12';
-        const growClass = this.findClassName('.grow__')?.replace('.', '') ?? 'grow__4c8a4';
-        const backgroundContainerClass = this.findClassName('.backgroundContainer__')?.replace('.', '') ?? 'backgroundContainer__8f24a';
-        return this.createElement('button')({ id, textContent, className: `${buttonClass} ${lookFilledClass} ${colorClass} ${sizeMediumClass} ${growClass} ${backgroundContainerClass}` });
-    }
-    generateSettings() {
-        const element = this.createElement("div")({ style: 'color:var(--header-primary);font-size:16px;font-weight:300;line-height:22px;max-width:550px;margin-top:17px' });
-        element.appendChild(this.createMyInput('Select Active Profile', 'With this plugin you can have multiple presets.', 'select', 'ASRPActiveProfileSelector', this.profiles.map((prof, i) => { return { value: String(i), label: prof.pname, selected: i == this.settings.activeProfileID }; })));
-        element.appendChild(this.createMyInput('Disable When Activity', 'Disables when there is another activity', 'onoff', 'disableWhenActivity'));
-        element.appendChild(this.createBr());
-        element.appendChild(this.createElement('hr')());
-        element.appendChild(this.createMyInput('Select Editing Profile', 'In order to change the name of the profile, edit profiles -> pname of AutoStartRichPresence.config.json.', 'select', 'ASRPProfileSelector', this.profiles.map((prof, i) => { return { value: String(i), label: prof.pname }; })));
-        element.appendChild(this.createMyButton('createProfile', 'Create New Profile', 'colorBrand'));
-        element.appendChild(this.createBr());
-        element.appendChild(this.createBr());
-        element.appendChild(this.createElement('hr')());
-
-        const editContainer = this.getSettingsFields();
-        element.appendChild(editContainer);
-        if (this.profiles?.length && this.profiles?.length > 0 && this.session.editingProfile <= this.profiles.length)
-            this.reloadEditProfileInputFields(editContainer, this.session.editingProfile);
-
-        element.appendChild(this.createMyButton('deleteProfile', 'Delete Profile', 'colorError'));
-
-        element.querySelector('select#ASRPActiveProfileSelector').onchange = function(e) {
-            const id = e.target.value && Number(e.target.value);
-            if (!isNaN(id)) {
-                this.settings.activeProfileID = id;
-                this.updateSettings();
-            }
-        }.bind(this);
-
-        element.querySelector('select#ASRPProfileSelector').onchange = function(e) {
-            const id = e.target.value && Number(e.target.value);
-            if (!isNaN(id)) {
-                this.session.editingProfile = id;
-                console.log('Edit profile changed')
-                this.reloadEditProfileInputFields(editContainer);
-            }
-        }.bind(this);
-
-        element.querySelector('button#createProfile').onclick = function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            this.profiles.push({
-                pname: "New Profile",
-            });
-            if (this.profiles.length === 1) this.settings.activeProfileID = 0;
-            this.session.editingProfile = this.profiles.length - 1;
-            this.updateProfiles();
-            this.reloadEditProfileGroup(element);
-            this.reloadEditProfileInputFields(editContainer);
-            BdApi.showToast("[AutoStartRichPresence] Created a new profile", { type: "success" });
-        }.bind(this);
-
-        element.querySelector('button#deleteProfile').onclick = function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const profileIDToDelete = this.session.editingProfile;
-            if (!this.profiles[profileIDToDelete]) return;
-            BdApi.showConfirmationModal("Delete Rich Presence Profile", `Are you sure you want to delete ${this.profiles[profileIDToDelete]?.name || "this profile"}? (This will not delete any Discord Developer Applications.)`, {
-                danger: true,
-                confirmText: "Delete",
-                onConfirm: () => {
-                    this.deleteProfile(profileIDToDelete);
-                    this.updateProfiles();
-                    this.reloadEditProfileGroup(element);
-                    this.reloadEditProfileInputFields(editContainer);
-                    BdApi.showToast("[AutoStartRichPresence] Deleted profile", { type: "success" });
-                }
-            });
-        }.bind(this);
-
-        (() => {
-            const el = element.querySelector('select#disableWhenActivity');
-            el.value = this.settings?.disableWhenActivity ? "true" : "false";
-            el.onchange = function(e) {
-                const value = e.target.value == 'true';
-                this.settings.disableWhenActivity = value;
-                this.updateSettings();
-            }.bind(this);
-        })()
-
-        return element;
-    }
-    getSettingsFields() {
-        const main = this.createElement('div')({ className: 'ASRPprofile' });
-        main.appendChild(this.createMyInput('Client ID', 'Enter your Client ID (get from developers page) [needed for image keys]', 'input', 'clientID'));        main.appendChild(this.createMyInput('Activity Name', 'Enter a name for the activity', 'input', 'name'));
-        main.appendChild(this.createMyInput('Activity Details', 'Enter a description for the activity', 'input', 'details'));
-        main.appendChild(this.createMyInput('Activity State', 'Enter a second description for the activity', 'input', 'state'));
-        main.appendChild(this.createMyInput('Activity Button 1 Text', 'Enter Text for button 1', 'input', 'button1Label'));
-        main.appendChild(this.createMyInput('Activity Button 1 URL', 'Enter URL for button 1', 'input', 'button1URL'));
-        main.appendChild(this.createMyInput('Activity Button 2 Text', 'Enter Text for button 2', 'input', 'button2Label'));
-        main.appendChild(this.createMyInput('Activity Button 2 URL', 'Enter URL for button 2', 'input', 'button2URL'));
-        main.appendChild(this.createMyInput('Activity Small Image Key', 'Enter Image Key for Small Icon', 'input', 'smallImageKey'));
-        main.appendChild(this.createMyInput('Activity Small Image Text', 'Enter Label for Small Icon', 'input', 'smallImageText'));
-        main.appendChild(this.createMyInput('Activity Large Image Key', 'Enter Image Key for Large Icon', 'input', 'largeImageKey'));
-        main.appendChild(this.createMyInput('Activity Large Image Text', 'Enter Label for Large Icon', 'input', 'largeImageText'));
-        main.appendChild(this.createMyInput('Enable Start Time', 'Enable timestamp which shows the time when started', 'onoff', 'enableStartTime'));
-        main.appendChild(this.createMyInput('Listening Status', 'Enable listening status', 'onoff', 'listeningTo'));
-        return main;
-    }
-    reloadEditProfileGroup(element) {
-        const activeOptions = this.profiles.map((prof, i) => { return { value: String(i), label: prof.pname, selected: i == this.settings.activeProfileID }; })
-        const activeEl = element.querySelector('select#ASRPActiveProfileSelector');
-        [...activeEl.querySelectorAll('option')].map((el, i) => el.remove());
-        for (const opt of activeOptions) {
-            const newEl = this.createElement('option')({ value: opt.value, textContent: opt.label });
-            if (opt?.selected) newEl.setAttribute('selected', '');
-            activeEl.appendChild(newEl);
-        }
-
-        const editOptions = this.profiles.map((prof, i) => { return { value: String(i), label: prof.pname, selected: i == this.session.editingProfile }; })
-        const editEl = element.querySelector('select#ASRPProfileSelector');
-        [...editEl.querySelectorAll('option')].map((el, i) => el.remove());
-        for (const opt of editOptions) {
-            const newEl = this.createElement('option')({ value: opt.value, textContent: opt.label });
-            if (opt?.selected) newEl.setAttribute('selected', '');
-            editEl.appendChild(newEl);
-        }
-    }
-    reloadEditProfileInputFields(editContainer) {
-        let updateSetting = (setting, newv) => {
-            if (this.profiles[this.session.editingProfile][setting] !== newv) {
-                this.profiles[this.session.editingProfile][setting] = newv;
-                this.updateProfiles();
-            }
-        }
-        const TextInputs = ["clientID", "name", "details", "state", "button1Label", "button1URL", "button2Label", "button2URL", "smallImageKey", "smallImageText", "largeImageKey", "largeImageText"];
-        for (const setting of TextInputs) {
-            const el = editContainer.querySelector('#' + setting);
-
-            if (!this.profiles[this.session.editingProfile]) {
-                el.setAttribute('disabled', '');
-                continue;
-            }
-            else el.removeAttribute('disabled');
-
-            el.value = this.profiles[this.session.editingProfile][setting] ?? "";
-            el.onchange = (e) => updateSetting(setting, e.target.value);
-            el.onpaste = (e) => updateSetting(setting, e.target.value);
-            el.onkeydown = (e) => updateSetting(setting, e.target.value);
-        }
-        const OnOffInputs = ["enableStartTime", "listeningTo"];
-        for (const setting of OnOffInputs) {
-            const el = editContainer.querySelector('#' + setting);
-
-            if (!this.profiles[this.session.editingProfile]) {
-                el.setAttribute('disabled', '');
-                continue;
-            }
-            else el.removeAttribute('disabled');
-
-            el.value = this.profiles[this.session.editingProfile][setting] ? "true" : "false";
-            el.onchange = (e) => updateSetting(setting, e.target.value === 'true');
-        }
     }
     setActivity(activity) {
         const obj = activity && (Object.entries(activity).length > 0 && Object.assign(activity, { flags: 1, type: this.activeProfile?.listeningTo ? 2 : 0 }) || activity);
@@ -372,7 +287,7 @@ class AutoStartRichPresence {
             name: this.activeProfile.name || undefined,
             details: this.activeProfile.details || undefined,
             state: this.activeProfile.state || undefined,
-            timestamps: { start: this.startPlaying ? Math.floor(this.startPlaying / 1000) : undefined },
+            timestamps: this.startPlaying ? { start: Math.floor(this.startPlaying / 1000) } : undefined,
             assets: (!this.isNullOrEmpty(this.activeProfile.smallImageKey)) ? {
                 small_image: await this.getAsset(this.activeProfile.smallImageKey),
                 small_text: this.activeProfile.smallImageText ?? undefined,
@@ -386,11 +301,11 @@ class AutoStartRichPresence {
         this.setActivity(obj);
     }
     updateSettings() {
-        BdApi.saveData("AutoStartRichPresence", "settings", this.settings);
+        this.api.Data.save("settings", this.settings);
         this.updateData(); // will return when not initialized
     }
     updateProfiles() {
-        BdApi.saveData("AutoStartRichPresence", "profiles", this.profiles);
+        this.api.Data.save("profiles", this.profiles);
     }
     deleteProfile(id) {
         this.profiles.splice(id, 1);
@@ -402,15 +317,12 @@ class AutoStartRichPresence {
             this.settings.activeProfileID--;
             this.updateSettings();
         }
-        if (this.session.editingProfile === id) {
-            this.session.editingProfile = this.settings.activeProfileID;
-        }
         this.updateProfiles();
     }
     migrateData() {
-        let profilesData = BdApi.loadData("AutoStartRichPresence", "profiles");
+        let profilesData = this.api.Data.load("profiles");
         // if (!profilesData?.length || profilesData.length > 0) return;
-        this.settings = BdApi.loadData("AutoStartRichPresence", "settings");
+        this.settings = this.api.Data.load("settings");
         BdApi.showToast("[AutoStartRichPresence] Migrating your data...");
         this.settings.activeProfileID = 0;
         this.settings.disableWhenActivity = false;
