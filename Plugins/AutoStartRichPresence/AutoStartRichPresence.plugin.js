@@ -1,6 +1,6 @@
 /**
  * @name AutoStartRichPresence
- * @version 2.0.15
+ * @version 2.0.16
  *
  * @author Miniontoby
  * @authorId 849180136828960799
@@ -11,7 +11,7 @@
  * @website https://github.com/Miniontoby/MinionBDStuff/tree/main/Plugins/AutoStartRichPresence/
  */
 
-// Updated March 29th, 2025
+// Updated April 5th, 2025
 
 /*@cc_on
 @if (@_jscript)
@@ -38,6 +38,16 @@
 
 const config = {
     changelog: [
+        {
+            title: "Update 2.0.16 - April 5th, 2025",
+            type: "updated",
+            items: [
+                "Updated the code to not use deprecated functions - issue #2",
+                "New logging system, so there's always a prefix",
+                "Using this.api. instead of BdApi.",
+                "Moved around some toasts to make them show when the plugin actually started up or shutdown"
+            ]
+        },
         {
             title: "Update 2.0.15 - March 29th, 2025",
             type: "updated",
@@ -71,8 +81,8 @@ class AutoStartRichPresence {
         this.updateDataInterval = 0;
         this.rpc = {};
 
-        let filter = BdApi.Webpack.Filters.byStrings("getAssetImage: size must === [number, number] for Twitch");
-        let assetManager = BdApi.Webpack.getModule(m => typeof m === "object" && Object.values(m).some(filter));
+        let filter = this.api.Webpack.Filters.byStrings("getAssetImage: size must === [number, number] for Twitch");
+        let assetManager = this.api.Webpack.getModule(m => typeof m === "object" && Object.values(m).some(filter));
         let getAsset;
         for (const key in assetManager) {
             const member = assetManager[key];
@@ -101,8 +111,7 @@ class AutoStartRichPresence {
         }
     }
     initialize() {
-        console.log("Starting AutoStartRichPresence");
-        BdApi.showToast("AutoStartRichPresence has started!");
+        this.api.Logger.log("Starting...");
         this.updateDataInterval = setInterval(() => this.updateData(), 60*1000); // every 60 seconds
 
         this.settings = this.api.Data.load("settings") || {};
@@ -111,19 +120,23 @@ class AutoStartRichPresence {
         this.profiles = this.api.Data.load("profiles") || [];
         if (!this.settings.activeProfileID && this.profiles.length) this.settings.activeProfileID = 0;
 
-        this.getLocalPresence = BdApi.findModuleByProps("getLocalPresence").getLocalPresence;
-        this.rpc = BdApi.findModuleByProps("dispatch", "_subscriptions");
+        this.getLocalPresence = this.api.Webpack.getModule(this.api.Webpack.Filters.byKeys("getLocalPresence")).getLocalPresence;
+        this.rpc = this.api.Webpack.getModule(this.api.Webpack.Filters.byKeys("dispatch", "_subscriptions"));
         this.rpcClientInfo = {};
         this.discordSetActivityHandler = null;
         this.initialized = true;
         this.updateData();
+        this.api.Logger.log("Started!");
+        this.api.UI.showToast("AutoStartRichPresence has started!");
     }
     async stop() {
+        this.api.Logger.log("Stopping...");
         clearInterval(this.updateDataInterval);
         this.updateDataInterval = 0;
         this.initialized = false;
         this.setActivity({});
-        BdApi.showToast("AutoStartRichPresence is stopping!");
+        this.api.Logger.log("Stopped");
+        this.api.UI.showToast("AutoStartRichPresence has stopped!");
     }
     get activeProfile() {
         if (!this.profiles?.length || this.profiles?.length == 0) return {};
@@ -154,7 +167,7 @@ class AutoStartRichPresence {
                     this.profiles.push({ pname: "New Profile" });
                     if (this.profiles.length === 1) this.settings.activeProfileID = 0;
                     this.updateProfiles();
-                    BdApi.showToast("[AutoStartRichPresence] Created a new profile", { type: "success" });
+                    this.api.UI.showToast("[AutoStartRichPresence] Created a new profile", { type: "success" });
                 },
             },
         ];
@@ -190,24 +203,24 @@ class AutoStartRichPresence {
                         inline: false,
                         onClick: () => {
                             const profileID = i;
-                            if (profileID >= this.profiles.length) return console.log("profileSettings too high ID", profileID, id, value);
-                            BdApi.showConfirmationModal("Delete Rich Presence Profile", `Are you sure you want to delete ${this.profiles[profileID]?.pname || "this profile"}? (This will not delete any Discord Developer Applications.)`, {
+                            if (profileID >= this.profiles.length) return this.api.Logger.log("profileSettings too high ID", profileID, id, value);
+                            this.api.UI.showConfirmationModal("Delete Rich Presence Profile", `Are you sure you want to delete ${this.profiles[profileID]?.pname || "this profile"}? (This will not delete any Discord Developer Applications.)`, {
                                 danger: true,
                                 confirmText: "Delete",
                                 onConfirm: () => {
                                     this.deleteProfile(profileID);
                                     this.updateProfiles();
-                                    BdApi.showToast("[AutoStartRichPresence] Deleted profile", { type: "success" });
+                                    this.api.UI.showToast("[AutoStartRichPresence] Deleted profile", { type: "success" });
                                 }
                             });
                         },
-                        color: BdApi.Components.Button.Colors.RED,
+                        color: this.api.Components.Button.Colors.RED,
                     },
                 ],
             });
         }
 
-        return BdApi.UI.buildSettingsPanel({
+        return this.api.UI.buildSettingsPanel({
             settings: settings,
             onChange: (category, id, value) => {
                 if (category === null) {
@@ -220,16 +233,16 @@ class AutoStartRichPresence {
                         this.settings.disableWhenActivity = value;
                         this.updateSettings();
                     } else {
-                        console.log("globalSettings UNKNOWN ID", id, value);
+                        this.api.Logger.log("globalSettings UNKNOWN ID", id, value);
                     }
                 } else if (category.startsWith("profile_")) {
                     const profileID = Number(category.replace("profile_", ""));
-                    if (isNaN(profileID)) return console.log("profileSettings NOT A NUMBER", category, profileID, id, value);
-                    if (profileID >= this.profiles.length) return console.log("profileSettings too high ID", profileID, id, value);
-                    //if (!(id in this.profiles[profileID])) return console.log("profileSettings", profileID, "UNKNOWN ID", id, value);
+                    if (isNaN(profileID)) return this.api.Logger.log("profileSettings NOT A NUMBER", category, profileID, id, value);
+                    if (profileID >= this.profiles.length) return this.api.Logger.log("profileSettings too high ID", profileID, id, value);
+                    //if (!(id in this.profiles[profileID])) return this.api.Logger.log("profileSettings", profileID, "UNKNOWN ID", id, value);
                     this.profiles[profileID][id] = value;
                 } else {
-                    console.log("UNKNOWN CATEGORY", category, id, value);
+                    this.api.Logger.log("UNKNOWN CATEGORY", category, id, value);
                 }
             }
         });
@@ -249,7 +262,7 @@ class AutoStartRichPresence {
     }
     setActivity(activity) {
         const obj = activity && (Object.entries(activity).length > 0 && Object.assign(activity, { flags: 1, type: this.activeProfile?.listeningTo ? 2 : 0 }) || activity);
-        console.log(obj);
+        // this.api.Logger.log(obj);
         this.rpc.dispatch({
             type: "LOCAL_ACTIVITY_UPDATE",
             activity: obj
@@ -263,16 +276,16 @@ class AutoStartRichPresence {
 
         let button_urls = [], buttons = [];
         if (!this.isNullOrEmpty(this.activeProfile.button1Label) && !this.isNullOrEmpty(this.activeProfile.button1URL)) {
-            if (this.activeProfile.button1Label.length > 32) BdApi.showToast("[AutoStartRichPresence] Button 1 label must not exceed 32 characters.", { type: "error" });
-            else if (!isURL(this.activeProfile.button1URL)) BdApi.showToast("[AutoStartRichPresence] Invalid button 1 URL.", { type: "error" });
+            if (this.activeProfile.button1Label.length > 32) this.api.UI.showToast("[AutoStartRichPresence] Button 1 label must not exceed 32 characters.", { type: "error" });
+            else if (!isURL(this.activeProfile.button1URL)) this.api.UI.showToast("[AutoStartRichPresence] Invalid button 1 URL.", { type: "error" });
             else {
                 buttons.push(this.activeProfile.button1Label);
                 button_urls.push(this.activeProfile.button1URL);
             }
         }
         if (!this.isNullOrEmpty(this.activeProfile.button2Label) && !this.isNullOrEmpty(this.activeProfile.button2URL)) {
-            if (this.activeProfile.button2Label.length > 32) BdApi.showToast("[AutoStartRichPresence] Button 2 label must not exceed 32 characters.", { type: "error" });
-            else if (!isURL(this.activeProfile.button2URL)) BdApi.showToast("[AutoStartRichPresence] Invalid button 2 URL.", { type: "error" });
+            if (this.activeProfile.button2Label.length > 32) this.api.UI.showToast("[AutoStartRichPresence] Button 2 label must not exceed 32 characters.", { type: "error" });
+            else if (!isURL(this.activeProfile.button2URL)) this.api.UI.showToast("[AutoStartRichPresence] Invalid button 2 URL.", { type: "error" });
             else {
                 buttons.push(this.activeProfile.button2Label);
                 button_urls.push(this.activeProfile.button2URL);
@@ -323,7 +336,8 @@ class AutoStartRichPresence {
         let profilesData = this.api.Data.load("profiles");
         // if (!profilesData?.length || profilesData.length > 0) return;
         this.settings = this.api.Data.load("settings");
-        BdApi.showToast("[AutoStartRichPresence] Migrating your data...");
+        this.api.Logger.log("Migrating your data...");
+        this.api.UI.showToast("[AutoStartRichPresence] Migrating your data...");
         this.settings.activeProfileID = 0;
         this.settings.disableWhenActivity = false;
         profilesData = [{
@@ -336,7 +350,8 @@ class AutoStartRichPresence {
         this.profiles = profilesData;
         this.updateProfiles();
         this.updateSettings();
-        BdApi.showToast("[AutoStartRichPresence] Migrated your data", { type: "success" });
+        this.api.Logger.log("Migrated your data!");
+        this.api.UI.showToast("[AutoStartRichPresence] Migrated your data!", { type: "success" });
     }
 }
 
