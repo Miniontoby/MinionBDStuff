@@ -1,6 +1,6 @@
 /**
  * @name AutoStartRichPresence
- * @version 2.0.16
+ * @version 2.0.17
  *
  * @author Miniontoby
  * @authorId 849180136828960799
@@ -11,7 +11,7 @@
  * @website https://github.com/Miniontoby/MinionBDStuff/tree/main/Plugins/AutoStartRichPresence/
  */
 
-// Updated April 5th, 2025
+// Updated April 24th, 2025
 
 /*@cc_on
 @if (@_jscript)
@@ -38,6 +38,13 @@
 
 const config = {
     changelog: [
+        {
+            title: "Update 2.0.17 - April 24th, 2025",
+            type: "updated",
+            items: [
+                "Updated the code to make the settings work when there's no profiles"
+            ]
+        },
         {
             title: "Update 2.0.16 - April 5th, 2025",
             type: "updated",
@@ -148,15 +155,16 @@ class AutoStartRichPresence {
         this.profiles = this.api.Data.load("profiles") || [];
 
         const settings = [
-            {
+            ...(this.profiles.length > 0 ? 
+            [{
                 type: "dropdown",
                 id: "ASRPActiveProfileSelector",
                 name: "Select Active Profile",
                 note: "With this plugin you can have multiple presets.",
-                value: this.settings.activeProfileID,
+                value: this.settings.activeProfileID ?? 0,
                 options: this.profiles.map((prof, i) => { return { value: i, label: prof.pname }; }),
-            },
-            { type: "switch", id: "disableWhenActivity", name: "Disable When Activity", note: "Disables when there is another activity", value: this.settings.disableWhenActivity },
+            }] : []),
+            { type: "switch", id: "disableWhenActivity", name: "Disable When Activity", note: "Disables when there is another activity", value: !!this.settings.disableWhenActivity },
             {
                 type: "button",
                 id: "createProfile",
