@@ -308,7 +308,7 @@ class AutoStartRichPresence {
             name: this.activeProfile.name || undefined,
             details: this.activeProfile.details || undefined,
             state: this.activeProfile.state || undefined,
-            timestamps: this.startPlaying ? { start: Math.floor(this.startPlaying / 1000) } : undefined,
+            timestamps: this.startPlaying ? { start: Math.floor(this.startPlaying) } : undefined,
             assets: (!this.isNullOrEmpty(this.activeProfile.smallImageKey)) ? {
                 small_image: await this.getAsset(this.activeProfile.smallImageKey),
                 small_text: this.activeProfile.smallImageText ?? undefined,
