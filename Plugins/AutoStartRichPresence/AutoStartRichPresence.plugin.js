@@ -1,6 +1,6 @@
 /**
  * @name AutoStartRichPresence
- * @version 2.0.17
+ * @version 2.0.18
  *
  * @author Miniontoby
  * @authorId 849180136828960799
@@ -11,7 +11,7 @@
  * @website https://github.com/Miniontoby/MinionBDStuff/tree/main/Plugins/AutoStartRichPresence/
  */
 
-// Updated April 24th, 2025
+// Updated May 1st, 2025
 
 /*@cc_on
 @if (@_jscript)
@@ -39,15 +39,22 @@
 const config = {
     changelog: [
         {
+            title: "Update 2.0.18 - May 1st, 2025",
+            type: "improved",
+            items: [
+                "Fixed the timestamp format since it had to be in miliseconds"
+            ]
+        },
+        {
             title: "Update 2.0.17 - April 24th, 2025",
-            type: "updated",
+            type: "improved",
             items: [
                 "Updated the code to make the settings work when there's no profiles"
             ]
         },
         {
             title: "Update 2.0.16 - April 5th, 2025",
-            type: "updated",
+            type: "improved",
             items: [
                 "Updated the code to not use deprecated functions - issue #2",
                 "New logging system, so there's always a prefix",
@@ -57,7 +64,7 @@ const config = {
         },
         {
             title: "Update 2.0.15 - March 29th, 2025",
-            type: "updated",
+            type: "improved",
             items: [
                 "Upgraded to newer BD 1.11.0 version",
                 "Added changelog"
@@ -308,7 +315,7 @@ class AutoStartRichPresence {
             name: this.activeProfile.name || undefined,
             details: this.activeProfile.details || undefined,
             state: this.activeProfile.state || undefined,
-            timestamps: this.startPlaying ? { start: Math.floor(this.startPlaying / 1000) } : undefined,
+            timestamps: this.startPlaying ? { start: Math.floor(this.startPlaying) } : undefined,
             assets: (!this.isNullOrEmpty(this.activeProfile.smallImageKey)) ? {
                 small_image: await this.getAsset(this.activeProfile.smallImageKey),
                 small_text: this.activeProfile.smallImageText ?? undefined,

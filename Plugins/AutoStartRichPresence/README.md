@@ -1,4 +1,4 @@
-# AutoStartRichPresence - [Download](https://betterdiscord.app/Download?id=)
+# AutoStartRichPresence - [Download](https://betterdiscord.app/Download?id=1301)
 
 Automatically starts a custom Rich Presence application when you start Discord. Now with support for multiple rich presence profiles!
 
