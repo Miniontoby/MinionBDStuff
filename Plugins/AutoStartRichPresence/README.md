@@ -5,7 +5,7 @@ Automatically starts a custom Rich Presence application when you start Discord. 
 Original idea by Lucario. Lucario's original plugin to do this is broken, so I wrote my own.
 This is not Lucario's original code, but I did try to keep the names of the settings the same.
 
-![Screenshot](./Screenshot.png)
+![Screenshot](https://github.com/Miniontoby/MinionBDStuff/raw/main/Plugins/AutoStartRichPresence/Screenshot.png)
 
 ## Install
 
