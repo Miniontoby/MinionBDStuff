@@ -5,6 +5,8 @@ Automatically starts a custom Rich Presence application when you start Discord. 
 Original idea by Lucario. Lucario's original plugin to do this is broken, so I wrote my own.
 This is not Lucario's original code, but I did try to keep the names of the settings the same.
 
+![Screenshot](./Screenshot.png)
+
 ## Install
 
 Just download the [AutoStartRichPresence.plugin.js](AutoStartRichPresence.plugin.js) file and put it in your plugins folder
