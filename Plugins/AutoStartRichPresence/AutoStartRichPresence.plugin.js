@@ -1,6 +1,6 @@
 /**
  * @name AutoStartRichPresence
- * @version 2.0.18
+ * @version 2.0.19
  *
  * @author Miniontoby
  * @authorId 849180136828960799
@@ -11,7 +11,7 @@
  * @website https://github.com/Miniontoby/MinionBDStuff/tree/main/Plugins/AutoStartRichPresence/
  */
 
-// Updated May 1st, 2025
+// Updated May 4th, 2025
 
 /*@cc_on
 @if (@_jscript)
@@ -38,6 +38,14 @@
 
 const config = {
     changelog: [
+        {
+            title: "Update 2.0.19 - May 4th, 2025",
+            type: "improved",
+            items: [
+                "Fixed activity data not being set to undefined if empty",
+                "Fixed bug #3 where activity name causes crash when showing yourself in sidebar"
+            ]
+        },
         {
             title: "Update 2.0.18 - May 1st, 2025",
             type: "improved",
@@ -74,6 +82,7 @@ const config = {
     // config is not static, but dynamic. Not specified here.
 };
 
+const DEFAULT_CLIENT_ID = '1002618051608444958';
 
 function isURL(url) {
     try {
@@ -106,7 +115,8 @@ class AutoStartRichPresence {
             }
         }
         this.getAsset = async key => {
-            if (getAsset && this.activeProfile.clientID) return (await getAsset(this.activeProfile.clientID, [key, undefined]))[0];
+            const clientId = !this.isNullOrEmpty(this.activeProfile.clientID) && this.activeProfile.clientID || DEFAULT_CLIENT_ID;
+            if (getAsset) return (await getAsset(clientID, [key, undefined]))[0];
             else return "";
         };
     }
@@ -127,6 +137,7 @@ class AutoStartRichPresence {
     initialize() {
         this.api.Logger.log("Starting...");
         this.updateDataInterval = setInterval(() => this.updateData(), 60*1000); // every 60 seconds
+        this.updateSettingsTimeout = -1;
 
         this.settings = this.api.Data.load("settings") || {};
         if (this.settings.clientID || this.settings.details || this.settings.state) this.migrateData();
@@ -256,6 +267,7 @@ class AutoStartRichPresence {
                     if (profileID >= this.profiles.length) return this.api.Logger.log("profileSettings too high ID", profileID, id, value);
                     //if (!(id in this.profiles[profileID])) return this.api.Logger.log("profileSettings", profileID, "UNKNOWN ID", id, value);
                     this.profiles[profileID][id] = value;
+                    this.updateProfiles();
                 } else {
                     this.api.Logger.log("UNKNOWN CATEGORY", category, id, value);
                 }
@@ -268,8 +280,9 @@ class AutoStartRichPresence {
 
         if (this.settings.disableWhenActivity) {
             const activities = this.getLocalPresence().activities;
-            if (activities.filter(a => a?.application_id && a.application_id !== this.activeProfile.clientID).length) {
-                if (activities.find(a => a?.application_id && a.application_id === this.activeProfile.clientID)) this.setActivity({});
+            const clientID = !this.isNullOrEmpty(this.activeProfile.clientID) && this.activeProfile.clientID || DEFAULT_CLIENT_ID;
+            if (activities.filter(a => a?.application_id && a.application_id !== clientID).length) {
+                if (activities.find(a => a?.application_id && a.application_id === clientID)) this.setActivity({});
                 return;
             }
         }
@@ -311,10 +324,10 @@ class AutoStartRichPresence {
         } else if (this.startPlaying) this.startPlaying = null;
 
         let obj = {
-            application_id: this.activeProfile.clientID ?? "1012465934088405062",
-            name: this.activeProfile.name || undefined,
-            details: this.activeProfile.details || undefined,
-            state: this.activeProfile.state || undefined,
+            application_id: (!this.isNullOrEmpty(this.activeProfile.clientID) && this.activeProfile.clientID) || DEFAULT_CLIENT_ID,
+            name: (!this.isNullOrEmpty(this.activeProfile.name) && this.activeProfile.name) || "", // name must be something, else discord will crash
+            details: (!this.isNullOrEmpty(this.activeProfile.details) && this.activeProfile.details) || undefined,
+            state: (!this.isNullOrEmpty(this.activeProfile.state) && this.activeProfile.state) || undefined,
             timestamps: this.startPlaying ? { start: Math.floor(this.startPlaying) } : undefined,
             assets: (!this.isNullOrEmpty(this.activeProfile.smallImageKey)) ? {
                 small_image: await this.getAsset(this.activeProfile.smallImageKey),
@@ -334,6 +347,8 @@ class AutoStartRichPresence {
     }
     updateProfiles() {
         this.api.Data.save("profiles", this.profiles);
+        clearTimeout(this.updateSettingsTimeout);
+        this.updateSettingsTimeout = setTimeout(() => this.updateData(), 1e3);
     }
     deleteProfile(id) {
         this.profiles.splice(id, 1);
