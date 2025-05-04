@@ -115,7 +115,7 @@ class AutoStartRichPresence {
             }
         }
         this.getAsset = async key => {
-            const clientId = !this.isNullOrEmpty(this.activeProfile.clientID) && this.activeProfile.clientID || DEFAULT_CLIENT_ID;
+            const clientID = !this.isNullOrEmpty(this.activeProfile.clientID) && this.activeProfile.clientID || DEFAULT_CLIENT_ID;
             if (getAsset) return (await getAsset(clientID, [key, undefined]))[0];
             else return "";
         };
