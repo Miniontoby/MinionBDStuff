@@ -1,6 +1,6 @@
 /**
  * @name AutoStartRichPresence
- * @version 2.0.19
+ * @version 2.0.20
  *
  * @author Miniontoby
  * @authorId 849180136828960799
@@ -11,7 +11,7 @@
  * @website https://github.com/Miniontoby/MinionBDStuff/tree/main/Plugins/AutoStartRichPresence/
  */
 
-// Updated May 4th, 2025
+// Updated Jan 24th, 2026
 
 /*@cc_on
 @if (@_jscript)
@@ -38,6 +38,14 @@
 
 const config = {
     changelog: [
+        {
+            title: "Update 2.0.20 - Jan 24th, 2026",
+            type: "improved",
+            items: [
+                "Fixed the this.rpc variable being undefined due to Discord updating. It now uses getStore instead",
+                "Made some more statement break less when unpredictable variables become undefined"
+            ]
+        },
         {
             title: "Update 2.0.19 - May 4th, 2025",
             type: "improved",
@@ -105,7 +113,7 @@ class AutoStartRichPresence {
         this.rpc = {};
 
         let filter = this.api.Webpack.Filters.byStrings("getAssetImage: size must === [number, number] for Twitch");
-        let assetManager = this.api.Webpack.getModule(m => typeof m === "object" && Object.values(m).some(filter));
+        let assetManager = this.api.Webpack.getModule(m => typeof m === "object" && Object.values(m).some(filter)) ?? [];
         let getAsset;
         for (const key in assetManager) {
             const member = assetManager[key];
@@ -145,8 +153,8 @@ class AutoStartRichPresence {
         this.profiles = this.api.Data.load("profiles") || [];
         if (!this.settings.activeProfileID && this.profiles.length) this.settings.activeProfileID = 0;
 
-        this.getLocalPresence = this.api.Webpack.getModule(this.api.Webpack.Filters.byKeys("getLocalPresence")).getLocalPresence;
-        this.rpc = this.api.Webpack.getModule(this.api.Webpack.Filters.byKeys("dispatch", "_subscriptions"));
+        this.getLocalPresence = this.api.Webpack.getModule(this.api.Webpack.Filters.byKeys("getLocalPresence"))?.getLocalPresence;
+        this.rpc = this.api.Webpack.getStore("UserStore")?._dispatcher;
         this.rpcClientInfo = {};
         this.discordSetActivityHandler = null;
         this.initialized = true;
@@ -279,10 +287,10 @@ class AutoStartRichPresence {
         if (this.profiles.length === 0) return this.setActivity({});
 
         if (this.settings.disableWhenActivity) {
-            const activities = this.getLocalPresence().activities;
+            const activities = (this.getLocalPresence?.()?.activities ?? []).filter(a => a?.application_id !== undefined);
             const clientID = !this.isNullOrEmpty(this.activeProfile.clientID) && this.activeProfile.clientID || DEFAULT_CLIENT_ID;
-            if (activities.filter(a => a?.application_id && a.application_id !== clientID).length) {
-                if (activities.find(a => a?.application_id && a.application_id === clientID)) this.setActivity({});
+            if (activities.filter(a => a.application_id !== clientID).length > 0) {
+                if (activities.find(a => a.application_id === clientID)) this.setActivity({});
                 return;
             }
         }
@@ -291,10 +299,13 @@ class AutoStartRichPresence {
     setActivity(activity) {
         const obj = activity && (Object.entries(activity).length > 0 && Object.assign(activity, { flags: 1, type: this.activeProfile?.listeningTo ? 2 : 0 }) || activity);
         // this.api.Logger.log(obj);
-        this.rpc.dispatch({
-            type: "LOCAL_ACTIVITY_UPDATE",
-            activity: obj
-        });
+        if (!this.rpc?.dispatch)
+            this.api.Logger.log("this.RPC/Dispatcher object is empty! Not setting activity!");
+        else
+            this.rpc.dispatch({
+                type: "LOCAL_ACTIVITY_UPDATE",
+                activity: obj,
+            });
     }
     isNullOrEmpty(input) {
         return input === undefined || input === null || input === '';

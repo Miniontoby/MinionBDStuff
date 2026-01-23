@@ -23,8 +23,8 @@ Enable the plugin and use the settings button to open settings.
 - **Activity Name** (required): The title that will show up as the "Playing ..." status content.
 - **Activity Details**: The details of the activity. Also known as the 'first line' of the status.
 - **Activity State**: The state of the activity. Also known as the 'second line' of the status.
-- **Activity Button 1 Text** (optional): The text for the first button (required when Button 1 URL is set!). **Max length is 32 characters**
-- **Activity Button 1 URL** (optional): The URL or asset key for the first button. Note that you will need to change the Client ID when using asset keys.
+- **Activity Button 1 Text** (**required**): The text for the first button. **Max length is 32 characters**
+- **Activity Button 1 URL** (**required**): The URL or asset key for the first button. Note that you will need to change the Client ID when using asset keys.
 - **Activity Button 2 Text** (optional): The text for the second button (required when Button 2 URL is set!). **Max length is 32 characters**
 - **Activity Button 2 URL** (optional): The URL or asset key for the second button.
 - **Activity Small Image Key** (optional): The URL or asset key for the small image. Note that you will need to change the Client ID when using asset keys.
@@ -56,6 +56,7 @@ You possibly need to reload Discord then. If it still doesn't show up, make sure
 ### The Rich Presence is not showing 10 seconds after it was started, and there are no visible errors.
 
 - Make sure the plugin is on.
+- Make sure you have at least ONE button filled in with URL and label, else it will not show due to Discord limitations.
 - Go to User Settings > Game Activity and turn on Display currently running game as a status message. If it was already on, turn it off, wait 5 seconds, and turn it back on.
 - Disable the experimental RPC event injection setting if you have it enabled, and restart Discord.
 - Wait 3 hours while your Discord client is continuously open. Sometimes, Discord may take a long time to display or update your Rich Presence.
